@@ -87,7 +87,7 @@ const SensorScreen = () => {
 
   return (
     <Provider>
-      <ScrollView>
+      <ScrollView style={{padding: 8}}>
         <Surface>
           <TopBar onPress={() => setShowModal(true)} />
         </Surface>
