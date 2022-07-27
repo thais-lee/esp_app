@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {View, StyleSheet} from 'react-native';
+import {View, StyleSheet, ScrollView} from 'react-native';
 import {Surface, Text, Button} from 'react-native-paper';
 import TopBar from '@src/components/appbar';
 import SettingModal from '@src/components/settingModal';
@@ -16,8 +16,7 @@ const ServerScreen = () => {
   const [ip, setIp] = React.useState('192.168.1.22');
   const [port, setPort] = React.useState('8000');
   const [serverState, setServerState] = React.useState('Loading...');
-  const [messageText, setMessageText] = React.useState('');
-  const [disableButton, setDisableButton] = React.useState(true);
+  const [disableButton, setDisableButton] = React.useState(false);
   const [serverMessages, setServerMessages] = React.useState([]);
   const [isTrained, setIsTrained] = React.useState(false);
 
@@ -25,7 +24,6 @@ const ServerScreen = () => {
     setIp(serverIp);
     setPort(serverPort);
     initialSocketConnection(ip, port);
-    console.log('ip/port ', serverIp, serverPort);
   };
 
   const hideModel = () => {
@@ -42,7 +40,13 @@ const ServerScreen = () => {
     };
 
     ws.onmessage = e => {
-      serverMessagesList.push('Server: ' + e.data);
+      const recvMsg = JSON.parse(e.data);
+
+      if(recvMsg.type === 'msg'){
+        setIsTrained(recvMsg.status);
+      }
+
+      serverMessagesList.push('Server: ' + recvMsg.msg);
       setServerMessages([...serverMessagesList]);
     };
 
@@ -60,17 +64,24 @@ const ServerScreen = () => {
   const predict = () => {
     const data = {
       type: 'predict',
-      payload: '',
     };
 
     serverMessagesList.push('Send: Predict');
     ws.send(JSON.stringify(data));
   };
 
+  const predictTest = () => {
+    const data = {
+      type: 'predictTest',
+    };
+
+    serverMessagesList.push('Send: Predict Test');
+    ws.send(JSON.stringify(data));
+  };
+
   const train = () => {
     const data = {
       type: 'train',
-      payload: '',
     };
 
     serverMessagesList.push('Send: Train');
@@ -89,16 +100,21 @@ const ServerScreen = () => {
         <Text>{serverState}</Text>
       </View>
       <View style={styles.serverResponse}>
-        {serverMessages.map((item, ind) => {
-          return <Text key={ind}>{item}</Text>;
-        })}
+        <ScrollView>
+          {serverMessages.map((item, ind) => {
+            return <Text key={ind}>{item}</Text>;
+          })}
+        </ScrollView>
       </View>
 
       <View style={styles.buttons}>
-        <Button disable={disableButton} onPress={train}>
+        <Button disabled={disableButton} onPress={train}>
           <Text>Train</Text>
         </Button>
-        <Button disable={disableButton} onPress={predict}>
+        <Button disabled={!(isTrained)} onPress={predictTest}>
+          <Text>PredictTest</Text>
+        </Button>
+        <Button disabled={!(isTrained)} onPress={predict}>
           <Text>Predict</Text>
         </Button>
       </View>
